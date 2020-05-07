@@ -1,0 +1,7 @@
+[build]
+rustflags = [
+	"-C", "link-arg=-L",
+	"-C", "link-arg=../freertos-10.3.1/build",
+	"-C", "link-arg=-Wl,-Bstatic",
+	"-C", "link-arg=-lfreertos"
+]

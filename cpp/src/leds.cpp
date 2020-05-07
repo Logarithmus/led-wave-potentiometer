@@ -1,0 +1,51 @@
+#include "leds.hpp"
+
+#include <avr/io.h>
+#include "freertos.hpp"
+#include "mpu_wrappers.h"
+
+namespace {
+	inline void init() {
+		DDRB = 0b1100'0011;
+		DDRD = 0b1111'1100;
+	}
+
+	inline uint8_t get_bit(uint16_t bits, uint8_t i) {
+		return (bits >> i) & 1;
+	}
+
+	void set(uint16_t bits) {
+		PORTD = (get_bit(bits, 9) << 2)
+			| (get_bit(bits, 8) << 3)
+			| (get_bit(bits, 7) << 4) 
+			| (get_bit(bits, 4) << 5) 
+			| (get_bit(bits, 3) << 6) 
+			| (get_bit(bits, 2) << 7);
+		PORTB = (get_bit(bits, 6) << 6)
+			| (get_bit(bits, 5) << 7)
+			| (get_bit(bits, 1) << 0) 
+			| (get_bit(bits, 0) << 1);
+	}
+}
+
+namespace leds {
+	void task(void*) {
+		constexpr uint8_t LEDS_COUNT = 10;
+		const auto adc_task = xTaskGetHandle("adc");
+		init();
+
+		bool direction = true;
+		constexpr uint16_t WAVE_START = 1 << (LEDS_COUNT - 1);
+		uint16_t wave = WAVE_START;
+		while (true) {
+			uint16_t speed = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
+			uint16_t period_ms = 10'000 - ((10'000 - 500) / 255) * speed;
+			uint16_t delay = pdMS_TO_TICKS(period_ms / (LEDS_COUNT * 2));
+			set(wave);
+			direction ? wave >>= 1 : wave <<= 1;
+			direction ^= ((wave == 1) || (wave == WAVE_START));
+			xTaskNotifyGive(adc_task);
+			vTaskDelay(delay);
+		}
+	}
+}

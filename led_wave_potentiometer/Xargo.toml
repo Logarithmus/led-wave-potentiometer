@@ -1,0 +1,2 @@
+[target.atmega88pa.dependencies]
+alloc = {}
