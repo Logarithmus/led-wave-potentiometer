@@ -9,6 +9,7 @@
 int main() {
 	xTaskCreate(leds::task, "leds", 64, NULL, 1, NULL);
 	xTaskCreate(adc::task, "adc", 64, NULL, 1, NULL);
+	xTaskCreate(display::task, "display", 64, NULL, 1, NULL);
 	vTaskStartScheduler();
 	while (1);
 	return 0;

@@ -1,6 +1,6 @@
 #include "adc.hpp"
 
-#include "avr/io.h"
+#include <avr/io.h>
 #include "freertos.hpp"
 #include "mpu_wrappers.h"
 
@@ -40,10 +40,13 @@ namespace adc {
 
 	void task(void*) {
 		const auto leds_task = xTaskGetHandle("leds");
+		const auto display_task = xTaskGetHandle("display");
 		init();
 		while (true) {
-			xTaskNotify(leds_task, get(), eSetValueWithoutOverwrite);
-			ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(10'000));
+			const uint8_t value = get();
+			xTaskNotify(leds_task, value, eSetValueWithoutOverwrite);
+			xTaskNotify(display_task, value, eSetValueWithoutOverwrite);
+			ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
 		}
 	}
 }

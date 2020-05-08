@@ -1,6 +1,7 @@
 #include "leds.hpp"
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include "freertos.hpp"
 #include "mpu_wrappers.h"
 
@@ -31,15 +32,17 @@ namespace {
 namespace leds {
 	void task(void*) {
 		constexpr uint8_t LEDS_COUNT = 10;
+		constexpr uint16_t WAVE_START = 1 << (LEDS_COUNT - 1);
+		constexpr uint16_t MIN_DELAY = 200;
+		constexpr uint16_t MAX_DELAY = 5000;
+
 		const auto adc_task = xTaskGetHandle("adc");
 		init();
-
 		bool direction = true;
-		constexpr uint16_t WAVE_START = 1 << (LEDS_COUNT - 1);
 		uint16_t wave = WAVE_START;
 		while (true) {
 			uint16_t speed = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
-			uint16_t period_ms = 10'000 - ((10'000 - 500) / 255) * speed;
+			uint16_t period_ms = MAX_DELAY - ((MAX_DELAY - MIN_DELAY) / UINT8_MAX) * speed;
 			uint16_t delay = pdMS_TO_TICKS(period_ms / (LEDS_COUNT * 2));
 			set(wave);
 			direction ? wave >>= 1 : wave <<= 1;
